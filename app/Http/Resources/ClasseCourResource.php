@@ -22,6 +22,7 @@ class ClasseCourResource extends JsonResource
             "classe" => $this->classe_annee->classe->libelle,
             "annee" => $this->classe_annee->annee_scolaire->libelle,
             "nbr_heure" => $this->nbr_heure,
+            "nbr_heure_restant" => $this->nbr_heure_restant,
             "nbr_heure_effectue" => $this->nbr_heure_effectue,
         ];;
     }

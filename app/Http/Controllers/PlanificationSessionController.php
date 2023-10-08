@@ -38,7 +38,6 @@ class PlanificationSessionController extends Controller
         $hd = $request->hd;
         $hf = $request->hf;
         $salle = $request->salle;
-        $profId = $request->profId;
         $classes = $request->courClasses;
         $salleDispo = $this->salleDispo($request);
         $courClasse = [];
@@ -47,23 +46,35 @@ class PlanificationSessionController extends Controller
             $idCours = PlanificationCourParClasse::getClasseAnne($id)->first()->planification_cour_id;
         }
         $professeur = PlanificationCour::getData($idCours)->first();
+        $allCours = ClasseCourResource::collection(PlanificationCourParClasse::getClasse($idCours)->get());
         $prof = $this->profDispo($request, $professeur->professeur_id);
         if ($hd < 8) {
             return $this->response(Response::HTTP_UNAUTHORIZED, "Désolé mais un cours ne peut pas débuter avant 08h !", []);
         }
         if ($prof['message'] == 'Ce prof est disponible !' && $salleDispo['message'] == 'La salle est disponible !') {
-            foreach ($classes as $classe) {
-                $courClasse[] = [
-                    "date" => $date,
-                    "heure_debut" => $hd,
-                    "heure_fin" => $hf,
-                    "cour_classe_id" => $classe,
-                    "salle_id" => $salle,
-                    "professeur_id" => $professeur->professeur_id,
-                    "etat" => "En cours"
-                ];
+            if ($allCours[0]->nbr_heure_restant >= ($hf - $hd)) {
+                foreach ($classes as $classe) {
+                    $courClasse[] = [
+                        "date" => $date,
+                        "heure_debut" => $hd,
+                        "heure_fin" => $hf,
+                        "cour_classe_id" => $classe,
+                        "salle_id" => $salle,
+                        "professeur_id" => $professeur->professeur_id,
+                        "etat" => "En cours"
+                    ];
+                }
+                foreach ($allCours as $cours) {
+                    PlanificationCourParClasse::where('planification_cour_id', $idCours)
+                        ->update([
+                            'nbr_heure_restant' => ($cours->nbr_heure_restant - ($hf - $hd))
+                        ]);
+                }
+                PlanificationSessionCour::insert($courClasse);
+                return $this->response(Response::HTTP_ACCEPTED, "Votre séssion a été bien enregistré !", ['session' => $courClasse]);
+            } else {
+                return $this->response(Response::HTTP_UNAUTHORIZED, "Désolé mais cette séssion ne peut pas etre programmée !", []);
             }
-            return PlanificationSessionCour::insert($courClasse);
         } elseif ($prof['message'] != 'Ce prof est disponible !') {
             return $prof;
         } else {
@@ -128,6 +139,16 @@ class PlanificationSessionController extends Controller
     {
         $allCours = ClasseCourResource::collection(PlanificationCourParClasse::getClasse($id)->get());
         return $this->response(Response::HTTP_ACCEPTED, 'Voici les classes', ['classes' => $allCours]);
+    }
+
+    public function sessionDispo(Request $request, $id)
+    {
+        $allCours = ClasseCourResource::collection(PlanificationCourParClasse::getClasse($id)->get());
+        if ($allCours[0]->nbr_heure_restant < ($request->hf - $request->hd)) {
+            return $this->response(Response::HTTP_UNAUTHORIZED, 'Désolé mais cette séssion ne peut pas etre programmée car il vous reste : ' . $allCours[0]->nbr_heure_restant . 'h', []);
+        } else {
+            return $this->response(Response::HTTP_UNAUTHORIZED, 'Vous pouvez programmer cette session !', []);
+        }
     }
 
     /**

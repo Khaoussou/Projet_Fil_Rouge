@@ -19,8 +19,10 @@ class SessionResource extends JsonResource
             'date' => $this->date,
             'heure_debut' => $this->heure_debut,
             'heure_fin' => $this->heure_fin,
+            'etat' => $this->etat,
             'prof' => $this->professeur->nom_complet,
-            'cour_classe' => $this->planification_cour_par_classe
+            'classe' => $this->planification_cour_par_classe->classe_annee->classe->libelle,
+            'annee' => $this->planification_cour_par_classe->classe_annee->annee_scolaire->libelle
         ];
     }
 }

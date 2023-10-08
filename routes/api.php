@@ -34,3 +34,4 @@ Route::get('/prof/{moduleId}', [PlanificationCourController::class, 'getProf']);
 Route::get('/classe/{id}', [PlanificationSessionController::class, 'courClasse']);
 Route::post('/salleDispo', [PlanificationSessionController::class, 'salleDispo']);
 Route::post('/profDispo/{profId}', [PlanificationSessionController::class, 'profDispo']);
+Route::post('/sessionDispo/{id}', [PlanificationSessionController::class, 'sessionDispo']);
