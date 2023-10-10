@@ -13,6 +13,7 @@ use App\Models\PlanificationCourParClasse;
 use App\Models\PlanificationSessionCour;
 use App\Models\Salle;
 use App\Traits\Format;
+use DateTime;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,6 +27,7 @@ class PlanificationSessionController extends Controller
     {
         $salles = SalleResource::collection(Salle::all());
         $sessions = SessionResource::collection(PlanificationSessionCour::all());
+        $allSessions = PlanificationSessionCour::all();
         return $this->response(Response::HTTP_ACCEPTED, '', ['session' => $sessions, 'salles' => $salles]);
     }
 
@@ -48,11 +50,12 @@ class PlanificationSessionController extends Controller
         $professeur = PlanificationCour::getData($idCours)->first();
         $allCours = ClasseCourResource::collection(PlanificationCourParClasse::getClasse($idCours)->get());
         $prof = $this->profDispo($request, $professeur->professeur_id);
-        if ($hd < 8) {
+        if ($hd < '08:00') {
             return $this->response(Response::HTTP_UNAUTHORIZED, "Désolé mais un cours ne peut pas débuter avant 08h !", []);
         }
+        // return $salleDispo;
         if ($prof['message'] == 'Ce prof est disponible !' && $salleDispo['message'] == 'La salle est disponible !') {
-            if ($allCours[0]->nbr_heure_restant >= ($hf - $hd)) {
+            if ($this->conversionToSecondes($allCours[0]->nbr_heure_restant) >= (strtotime($hf) - strtotime($hd))) {
                 foreach ($classes as $classe) {
                     $courClasse[] = [
                         "date" => $date,
@@ -65,9 +68,10 @@ class PlanificationSessionController extends Controller
                     ];
                 }
                 foreach ($allCours as $cours) {
+                    $reste = $this->conversionToSecondes($cours->nbr_heure_restant) - (strtotime($hf) - strtotime($hd));
                     PlanificationCourParClasse::where('planification_cour_id', $idCours)
                         ->update([
-                            'nbr_heure_restant' => ($cours->nbr_heure_restant - ($hf - $hd))
+                            'nbr_heure_restant' => date("H:i:s", $reste)
                         ]);
                 }
                 PlanificationSessionCour::insert($courClasse);
@@ -82,6 +86,12 @@ class PlanificationSessionController extends Controller
         }
     }
 
+    public function conversionToSecondes($duree)
+    {
+        list($heures, $minutes, $secondes) = explode(':', $duree);
+        return $heures * 3600 + $minutes * 60 + $secondes;
+    }
+
     /**
      * Display the specified resource.
      */
@@ -93,13 +103,13 @@ class PlanificationSessionController extends Controller
     public function profDispo(Request $request, $profId)
     {
         $session = PlanificationSessionCour::getSessionProf($request->date, $profId)->first();
-        if ($request->date >= now() && $request->hf > $request->hd) {
+        if ($request->date >= now() && strtotime($request->hf) > strtotime($request->hd)) {
             if ($session) {
-                if ($session->heure_debut == $request->hd && $session->heure_fin == $request->hf) {
+                if ($this->conversionToSecondes($session->heure_debut) == strtotime($request->hd) && $this->conversionToSecondes($session->heure_fin) == strtotime($request->hf)) {
                     return $this->response(Response::HTTP_UNAUTHORIZED, "Ce prof a déja une séssion prévue pour cette heure !", []);
-                } elseif ($request->hd >= $session->heure_debut && $request->hd < $session->heure_fin) {
+                } elseif (strtotime($request->hd) >= $this->conversionToSecondes($session->heure_debut) && strtotime($request->hd) < $this->conversionToSecondes($session->heure_fin)) {
                     return $this->response(Response::HTTP_UNAUTHORIZED, "Ce prof a déja une séssion prévue pour cette heure !", []);
-                } elseif ($request->hf >= $session->heure_debut && $request->hf <= $session->heure_fin) {
+                } elseif (strtotime($request->hf) >= $this->conversionToSecondes($session->heure_debut) && strtotime($request->hf) <= $this->conversionToSecondes($session->heure_fin)) {
                     return $this->response(Response::HTTP_UNAUTHORIZED, "Ce prof a déja une séssion prévue pour cette heure !", []);
                 }
             }
@@ -124,11 +134,11 @@ class PlanificationSessionController extends Controller
         if ($nbrPlace < $effectifs) {
             return $this->response(Response::HTTP_UNAUTHORIZED, "Impossible de planifier cette session car il n'y a pas assez de place disponible dans cette salle !", []);
         } elseif ($session) {
-            if ($session->heure_debut == $request->hd && $session->heure_fin == $request->hf) {
+            if ($this->conversionToSecondes($session->heure_debut) == strtotime($request->hd) && $this->conversionToSecondes($session->heure_fin) == strtotime($request->hf)) {
                 return $this->response(Response::HTTP_UNAUTHORIZED, "Une séssion est déja prévue dans cette salle pour cette heure !", []);
-            } elseif ($request->hd >= $session->heure_debut && $request->hd < $session->heure_fin) {
+            } elseif (strtotime($request->hd) >= $this->conversionToSecondes($session->heure_debut) && strtotime($request->hd) < $this->conversionToSecondes($session->heure_fin)) {
                 return $this->response(Response::HTTP_UNAUTHORIZED, "Une séssion est déja prévue dans cette salle pour cette heure !", []);
-            } elseif ($request->hf >= $session->heure_debut && $request->hf <= $session->heure_fin) {
+            } elseif ($request->hf >= $this->conversionToSecondes($session->heure_debut) && $request->hf <= $this->conversionToSecondes($session->heure_fin)) {
                 return $this->response(Response::HTTP_UNAUTHORIZED, "Une séssion est déja prévue dans cette salle pour cette heure !", []);
             }
         }
@@ -144,7 +154,7 @@ class PlanificationSessionController extends Controller
     public function sessionDispo(Request $request, $id)
     {
         $allCours = ClasseCourResource::collection(PlanificationCourParClasse::getClasse($id)->get());
-        if ($allCours[0]->nbr_heure_restant < ($request->hf - $request->hd)) {
+        if ($this->conversionToSecondes($allCours[0]->nbr_heure_restant) < (strtotime($request->hf) - strtotime($request->hd))) {
             return $this->response(Response::HTTP_UNAUTHORIZED, 'Désolé mais cette séssion ne peut pas etre programmée car il vous reste : ' . $allCours[0]->nbr_heure_restant . 'h', []);
         } else {
             return $this->response(Response::HTTP_UNAUTHORIZED, 'Vous pouvez programmer cette session !', []);

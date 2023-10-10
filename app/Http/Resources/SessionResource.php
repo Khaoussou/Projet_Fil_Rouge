@@ -21,6 +21,7 @@ class SessionResource extends JsonResource
             'heure_fin' => $this->heure_fin,
             'etat' => $this->etat,
             'prof' => $this->professeur->nom_complet,
+            'salle' => $this->salle->libelle,
             'classe' => $this->planification_cour_par_classe->classe_annee->classe->libelle,
             'annee' => $this->planification_cour_par_classe->classe_annee->annee_scolaire->libelle
         ];

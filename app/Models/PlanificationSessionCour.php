@@ -34,4 +34,9 @@ class PlanificationSessionCour extends Model
     {
         return $this->belongsTo(Professeur::class);
     }
+
+    public function salle(): BelongsTo
+    {
+        return $this->belongsTo(Salle::class);
+    }
 }
