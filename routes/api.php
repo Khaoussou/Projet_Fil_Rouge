@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClasseAnneeController;
+use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\PlanificationCourController;
 use App\Http\Controllers\PlanificationCourParClasseController;
 use App\Http\Controllers\PlanificationSessionController;
@@ -29,6 +30,7 @@ Route::apiResource('cour/classes', PlanificationCourParClasseController::class);
 Route::apiResource('classeAnnee', ClasseAnneeController::class);
 Route::apiResource('users', UserController::class);
 Route::apiResource('sessions', PlanificationSessionController::class);
+Route::apiResource('inscriptions', InscriptionController::class);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/prof/{moduleId}', [PlanificationCourController::class, 'getProf']);
 Route::get('/classe/{id}', [PlanificationSessionController::class, 'courClasse']);

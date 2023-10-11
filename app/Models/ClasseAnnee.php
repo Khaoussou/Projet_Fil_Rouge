@@ -27,4 +27,9 @@ class ClasseAnnee extends Model
     {
         return $builder->where('id', $classeAnnee);
     }
+
+    public function scopeGetYearClasse(Builder $builder , $classId, $yearId)
+    {
+        return $builder->where(['classe_id' => $classId, 'annee_scolaire_id' => $yearId]);
+    }
 }
