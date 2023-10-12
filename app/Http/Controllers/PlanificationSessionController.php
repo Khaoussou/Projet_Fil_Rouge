@@ -44,7 +44,6 @@ class PlanificationSessionController extends Controller
         $salleDispo = $this->salleDispo($request);
         $courClasse = [];
         $idCours = 0;
-        // return $hf;
         foreach ($classes as $id) {
             $idCours = PlanificationCourParClasse::getClasseAnne($id)->first()->planification_cour_id;
         }
