@@ -18,6 +18,7 @@ class PlanificationCourResource extends JsonResource
             'cour_id' => $this->id,
             'semestre' => $this->semestre->libelle,
             'module' => $this->module->libelle,
+            'etat' => $this->etat,
             'professeur' => $this->professeur->nom_complet,
             'cours' => CourParClasseResource::collection($this->planificationCourParClasse)
         ];

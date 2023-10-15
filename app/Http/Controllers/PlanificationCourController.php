@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Module;
+use App\Models\User;
 use App\Traits\Format;
 use App\Models\Professeur;
 use App\Models\ClasseAnnee;
@@ -16,7 +17,9 @@ use App\Models\PlanificationCourParClasse;
 use App\Http\Resources\ClasseAnneeResource;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\PlanificationCourRequest;
+use App\Http\Resources\InscriptionResource;
 use App\Http\Resources\PlanificationCourResource;
+use App\Models\Inscription;
 
 class PlanificationCourController extends Controller
 {
@@ -60,7 +63,25 @@ class PlanificationCourController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $cours = PlanificationCour::where('id', $id)->first();
+        return $this->response(Response::HTTP_ACCEPTED, "Voici votre cours", ['cours' => new PlanificationCourResource($cours)]);
+    }
+
+    public function getStudent($courId)
+    {
+        $tabInscriptions = [];
+        $inscriptions = [];
+        $classeAnnees = PlanificationCourParClasse::getClasse($courId)->pluck('classe_annee_id');
+        foreach ($classeAnnees as $annee) {
+            $tabInscriptions[] = Inscription::getUser($annee)->get();
+        }
+        foreach ($tabInscriptions as $inscris) {
+            foreach ($inscris as $inscription) {
+                $inscriptions[] = $inscription;
+            }
+        }
+        $users = InscriptionResource::collection($inscriptions);
+        return $this->response(Response::HTTP_ACCEPTED, "Voici les éléves faisant ce cours : ", ['users' => $users]);
     }
 
     /**
@@ -68,7 +89,9 @@ class PlanificationCourController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        PlanificationCour::where("id", $id)->update(['etat' => $request->etat]);
+        $cours = PlanificationCour::where("id", $id)->first();
+        return $this->response(Response::HTTP_ACCEPTED, "Le changement d'etat a bien réussi !", ['cours' => new PlanificationCourResource($cours)]);
     }
 
     /**

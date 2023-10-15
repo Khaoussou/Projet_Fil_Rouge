@@ -26,9 +26,10 @@ class User extends Authenticatable
         "name",
         "date_naissance",
         "lieu_naissance",
-        "email",
+        "role",
         "username",
-        "telephone"
+        "telephone",
+        "professeur_id"
     ];
 
     /**
@@ -54,5 +55,10 @@ class User extends Authenticatable
     public function scopeGetUser(Builder $builder, $email)
     {
         return $builder->where('email', $email);
+    }
+
+    public function scopeGetUserById(Builder $builder, $id)
+    {
+        return $builder->where('id', $id);
     }
 }

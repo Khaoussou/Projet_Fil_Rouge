@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PlanificationCourResource;
 use App\Http\Resources\UserResource;
 use App\Mail\StudentMail;
 use App\Models\AnneeScolaire;
 use App\Models\Classe;
 use App\Models\ClasseAnnee;
 use App\Models\Inscription;
+use App\Models\PlanificationCour;
 use App\Models\User;
 use App\Traits\Format;
 use Illuminate\Http\Request;
@@ -33,10 +35,10 @@ class InscriptionController extends Controller
     {
         $data = $request->all();
         $subject = 'Notification de votre mot de passe !';
+        $inscriptions = [];
+        $classeNonDispo = [];
         foreach ($data as $d) {
-            $classeId = Classe::getClasse($d['classe'])->first()->id;
-            $yearId = AnneeScolaire::getYear($d['annee'])->first()->id;
-            $classeAnnee = ClasseAnnee::getYearClasse($classeId, $yearId)->first();
+            $classe = Classe::getClasse($d['classe'])->first();
             $newEtudiant = [
                 "name" => $d['name'],
                 "date_naissance" => $d['date_naissance'],
@@ -46,24 +48,35 @@ class InscriptionController extends Controller
                 "password" => $d['password'],
                 "telephone" => $d['telephone'],
             ];
-            if ($d['numero'] == 0 && $classeAnnee) {
-                $user = User::create($newEtudiant);
-                $inscriptions[] = [
-                    'classe_annee_id' => $classeAnnee->id,
-                    'user_id' => $user->id
-                ];
-                $message = $d['password'];
-                Mail::to($user->email)->send(new StudentMail($user, $message, $subject));
+            $year = AnneeScolaire::getYear($d['annee'])->first();
+            if ($classe && $year) {
+                $classeAnnee = ClasseAnnee::getYearClasse($classe->id, $year->id)->first();
+                if ($classeAnnee) {
+                    if ($d['numero'] == 0) {
+                        $user = User::create($newEtudiant);
+                        $inscriptions[] = [
+                            'classe_annee_id' => $classeAnnee->id,
+                            'user_id' => $user->id
+                        ];
+                        $message = $d['password'];
+                        Mail::to($user->email)->send(new StudentMail($user, $message, $subject));
+                    } else {
+                        $user = User::getUser($d['email'])->first();
+                        $inscriptions[] = [
+                            'classe_annee_id' => $classeAnnee->id,
+                            'user_id' => $user->id
+                        ];
+                    }
+                }
             } else {
-                $user = User::getUser($d['email'])->first();
-                $inscriptions[] = [
-                    'classe_annee_id' => $classeAnnee->id,
-                    'user_id' => $user->id
-                ];
+                $classeNonDispo[] = $d;
             }
         }
-        Inscription::insert($inscriptions);
-        return $this->response(Response::HTTP_ACCEPTED, 'Inscription réussie !', []);
+        $inscrits = Inscription::insert($inscriptions);
+        if (count($classeNonDispo) == 0) {
+            return $this->response(Response::HTTP_ACCEPTED, 'Tous les éléves sont inscrits !', [$inscrits]);
+        }
+        return $this->response(Response::HTTP_UNAUTHORIZED, "Voici les éléves non inscrits :", [$classeNonDispo]);
     }
 
     public function updatePassWord(Request $request)
@@ -87,7 +100,6 @@ class InscriptionController extends Controller
      */
     public function show(string $id)
     {
-        //
     }
 
     /**

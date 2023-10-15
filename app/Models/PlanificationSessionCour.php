@@ -39,4 +39,9 @@ class PlanificationSessionCour extends Model
     {
         return $this->belongsTo(Salle::class);
     }
+
+    public function scopeSessionProf(Builder $builder, $profId)
+    {
+        return $builder->where('professeur_id', $profId);
+    }
 }

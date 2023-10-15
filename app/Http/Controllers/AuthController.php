@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Traits\Format;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,8 @@ class AuthController extends Controller
         
         return response([
             "nom" => $user->name,
+            "user_id" => User::getUser($user->email)->first()->id,
+            "prof_id" => User::getUser($user->email)->first()->professeur_id,
             "role" => $user->role,
             "token" => $token
         ])->withCookie($cookie);

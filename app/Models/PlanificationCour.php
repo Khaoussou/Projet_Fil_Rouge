@@ -56,4 +56,8 @@ class PlanificationCour extends Model
     {
         return $builder->where('id', $id);
     }
+    public function scopeGetCourByProf(Builder $builder, $id)
+    {
+        return $builder->where('professeur_id', $id);
+    }
 }
