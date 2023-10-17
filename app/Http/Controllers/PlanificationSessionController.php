@@ -55,7 +55,7 @@ class PlanificationSessionController extends Controller
             return $this->response(Response::HTTP_UNAUTHORIZED, "Désolé mais un cours ne peut pas débuter avant 08h !", []);
         }
         if ($prof['message'] == 'Ce prof est disponible !' && $salleDispo['message'] == 'La salle est disponible !') {
-            if ($this->conversionToSecondes($allCours[0]->nbr_heure_restant) >= (strtotime($hf) - strtotime($hd))) {
+            if ($this->conversionToSecondes(($allCours[0]->nbr_heure_restant . ':00:00')) >= (strtotime($hf) - strtotime($hd))) {
                 foreach ($classes as $classe) {
                     $courClasse[] = [
                         "date" => $date,
@@ -68,10 +68,10 @@ class PlanificationSessionController extends Controller
                     ];
                 }
                 foreach ($allCours as $cours) {
-                    $reste = $this->conversionToSecondes($cours->nbr_heure_restant) - $diff;
+                    $reste = $this->conversionToSecondes(($cours->nbr_heure_restant . ':00:00')) - $diff;
                     PlanificationCourParClasse::where('planification_cour_id', $idCours)
                         ->update([
-                            'nbr_heure_restant' => date("H:i:s", $reste)
+                            'nbr_heure_restant' => ($reste / 3600)
                         ]);
                 }
                 PlanificationSessionCour::insert($courClasse);
@@ -151,10 +151,23 @@ class PlanificationSessionController extends Controller
         return $this->response(Response::HTTP_ACCEPTED, 'Voici les classes', ['classes' => $allCours]);
     }
 
+    public function getSessions(Request $request)
+    {
+        $date = $request->date;
+        $courClasses = $request->courClasses;
+        $hd = $request->hd;
+        $hf = $request->hf;
+        $sessionIds = [];
+        foreach ($courClasses as $id) {
+            $sessionIds[] = PlanificationSessionCour::getSesions($date, $hd, $hf, $id)->first()->id;
+        }
+        return $sessionIds;
+    }
+
     public function sessionDispo(Request $request, $id)
     {
         $allCours = ClasseCourResource::collection(PlanificationCourParClasse::getClasse($id)->get());
-        if ($this->conversionToSecondes($allCours[0]->nbr_heure_restant) < (strtotime($request->hf) - strtotime($request->hd))) {
+        if ($this->conversionToSecondes(($allCours[0]->nbr_heure_restant . ':00:00')) < (strtotime($request->hf) - strtotime($request->hd))) {
             return $this->response(Response::HTTP_UNAUTHORIZED, 'Désolé mais cette séssion ne peut pas etre programmée car il vous reste : ' . $allCours[0]->nbr_heure_restant . 'h', []);
         } else {
             return $this->response(Response::HTTP_UNAUTHORIZED, 'Vous pouvez programmer cette session !', []);
@@ -167,6 +180,26 @@ class PlanificationSessionController extends Controller
     public function update(Request $request, string $id)
     {
         //
+    }
+
+    public function modify(Request $request)
+    {
+        $idSessions = $this->getSessions($request);
+        $hd = $request->hd;
+        $hf = $request->hf;
+        $courClasses = $request->courClasses;
+        $diff = strtotime($hf) - strtotime($hd);
+        $sessions = [];
+        foreach ($idSessions as $id) {
+            PlanificationSessionCour::where('id', $id)->update(['etat' => 'Terminer']);
+            $sessions[] = PlanificationSessionCour::where('id', $id)->first();
+        }
+        foreach ($courClasses as $id) {
+            $courClass = PlanificationCourParClasse::where('id', $id)->first();
+            $reste = $this->conversionToSecondes(($courClass->nbr_heure_effectue . ':00:00')) + $diff;
+            PlanificationCourParClasse::where('id', $id)->update(['nbr_heure_effectue' => ($reste / 3600)]);
+        }
+        return $this->response(Response::HTTP_UNAUTHORIZED, "L'etat de votre session a bien été modifié !", ['sessions' => SessionResource::collection($sessions)]);
     }
 
     /**

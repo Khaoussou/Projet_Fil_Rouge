@@ -26,6 +26,16 @@ class PlanificationSessionCour extends Model
             'salle_id' => $salleId
         ]);
     }
+
+    public function scopeGetSesions(Builder $builder, $date, $hd, $hf, $courId)
+    {
+        return $builder->where([
+            'date' => $date,
+            'cour_classe_id' => $courId,
+            'heure_debut' => $hd,
+            'heure_fin' => $hf
+        ]);
+    }
     public function planification_cour_par_classe(): BelongsTo
     {
         return $this->belongsTo(PlanificationCourParClasse::class, 'cour_classe_id');
@@ -43,5 +53,10 @@ class PlanificationSessionCour extends Model
     public function scopeSessionProf(Builder $builder, $profId)
     {
         return $builder->where('professeur_id', $profId);
+    }
+
+    public function scopeGetSession(Builder $builder, $courClasse)
+    {
+        return $builder->where('cour_classe_id', $courClasse);
     }
 }

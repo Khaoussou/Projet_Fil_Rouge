@@ -44,3 +44,5 @@ Route::post('/updatePassword', [InscriptionController::class, 'updatePassWord'])
 Route::get('/courProf/{idProf}', [ProfesseurController::class, 'courProf']);
 Route::get('/sessionProf/{idProf}', [ProfesseurController::class, 'sessionProf']);
 Route::get('/cours/student/{courId}', [PlanificationCourController::class, 'getStudent']);
+Route::post('/sessionCours', [PlanificationSessionController::class, 'getSessions']);
+Route::put('/modify', [PlanificationSessionController::class, 'modify']);
