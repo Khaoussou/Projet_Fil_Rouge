@@ -26,4 +26,9 @@ class Inscription extends Model
     {
         return $this->belongsTo(ClasseAnnee::class);
     }
+
+    public function scopeGetClasseAnnee(Builder $builder, $userId)
+    {
+        return $builder->where('user_id', $userId);
+    }
 }

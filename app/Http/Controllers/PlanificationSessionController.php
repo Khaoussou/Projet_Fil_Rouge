@@ -202,6 +202,22 @@ class PlanificationSessionController extends Controller
         return $this->response(Response::HTTP_UNAUTHORIZED, "L'etat de votre session a bien été modifié !", ['sessions' => SessionResource::collection($sessions)]);
     }
 
+    public function removeSession(Request $request)
+    {
+        $diff = strtotime($request->hf) - strtotime($request->hd);
+        $classes = PlanificationCourParClasse::getClasse($request->id)->get();
+        $reste = $this->conversionToSecondes(($classes[0]->nbr_heure_restant . ':00:00')) + $diff;
+        foreach ($classes as $cl) {
+            PlanificationCourParClasse::where('id', $cl->id)->update(['nbr_heure_restant' => ($reste / 3600)]);
+        }
+        PlanificationSessionCour::where([
+            "date" => $request->date,
+            "heure_debut" => $request->hd,
+            "heure_fin" => $request->hf,
+        ])->delete();
+        return $this->response(Response::HTTP_UNAUTHORIZED, "Votre session a bien été annuler !", []);
+    }
+
     /**
      * Remove the specified resource from storage.
      */

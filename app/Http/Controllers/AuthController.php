@@ -25,6 +25,7 @@ class AuthController extends Controller
             "user_id" => User::getUser($user->email)->first()->id,
             "prof_id" => User::getUser($user->email)->first()->professeur_id,
             "role" => $user->role,
+            "telephone" => $user->telephone,
             "token" => $token
         ])->withCookie($cookie);
     }

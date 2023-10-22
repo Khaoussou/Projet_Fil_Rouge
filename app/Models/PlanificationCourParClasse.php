@@ -38,4 +38,9 @@ class PlanificationCourParClasse extends Model
     {
         return $builder->where("planification_cour_id", $courId);
     }
+
+    public function scopeGetClasseAnnee(Builder $builder, $classeAnneeId)
+    {
+        return $builder->where("classe_annee_id", $classeAnneeId);
+    }
 }

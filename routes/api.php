@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClasseAnneeController;
+use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\PlanificationCourController;
 use App\Http\Controllers\PlanificationCourParClasseController;
@@ -46,3 +47,6 @@ Route::get('/sessionProf/{idProf}', [ProfesseurController::class, 'sessionProf']
 Route::get('/cours/student/{courId}', [PlanificationCourController::class, 'getStudent']);
 Route::post('/sessionCours', [PlanificationSessionController::class, 'getSessions']);
 Route::put('/modify', [PlanificationSessionController::class, 'modify']);
+Route::get('/courUsers/{userId}', [EtudiantController::class, 'getCourUser']);
+Route::get('/courSessionUsers/{userId}/{courId}', [EtudiantController::class, 'getSessionCoursUsers']);
+Route::post('removeSession', [PlanificationSessionController::class, 'removeSession']);
