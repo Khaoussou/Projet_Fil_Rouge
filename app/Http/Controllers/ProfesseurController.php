@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PlanificationCourResource;
 use App\Http\Resources\SessionResource;
+use App\Mail\ProfMail;
 use App\Models\PlanificationCour;
 use App\Models\PlanificationSessionCour;
 use App\Models\Professeur;
 use App\Models\User;
 use App\Traits\Format;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProfesseurController extends Controller
@@ -63,6 +65,20 @@ class ProfesseurController extends Controller
             return $this->response(Response::HTTP_ACCEPTED, 'Voici les cours de ce prof', ['sessions' => SessionResource::collection($sessionProf)]);
         }
         return $this->response(Response::HTTP_ACCEPTED, "Vous n'avez aucune session programmée pour ce cours", []);
+    }
+
+    public function demande(Request $request)
+    {
+        $prof = User::getUserById($request->id)->first();
+        $user = User::getUser('khaoussoudiallo7@gmail.com')->first();
+        $message = $request->message;
+        $subject = 'Notification de demande';
+        PlanificationSessionCour::where([
+            "date" => $request->date,
+            "heure_debut" => $request->hd,
+            "heure_fin" => $request->hf,
+        ])->update(['demande' => '1']);
+        Mail::to('khaoussoudiallo7@gmail.com')->send(new ProfMail($user, $prof->email, $prof, $message, $subject));
     }
 
     /**
