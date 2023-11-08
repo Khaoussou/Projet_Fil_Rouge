@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClasseAnneeController;
+use App\Http\Controllers\EmargementController;
 use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\PlanificationCourController;
@@ -34,6 +35,7 @@ Route::apiResource('users', UserController::class);
 Route::apiResource('sessions', PlanificationSessionController::class);
 Route::apiResource('professeur', ProfesseurController::class);
 Route::apiResource('inscriptions', InscriptionController::class);
+Route::apiResource('/emargements', EmargementController::class);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/logout', [AuthController::class, 'logout']);
 Route::get('/prof/{moduleId}', [PlanificationCourController::class, 'getProf']);
@@ -49,5 +51,8 @@ Route::get('/cours/student/{courId}', [PlanificationCourController::class, 'getS
 Route::post('/sessionCours', [PlanificationSessionController::class, 'getSessions']);
 Route::put('/modify', [PlanificationSessionController::class, 'modify']);
 Route::get('/courUsers/{userId}', [EtudiantController::class, 'getCourUser']);
+Route::get('/sessionDay/{userId}', [EtudiantController::class, 'getSessionDay']);
 Route::get('/courSessionUsers/{userId}/{courId}', [EtudiantController::class, 'getSessionCoursUsers']);
 Route::post('removeSession', [PlanificationSessionController::class, 'removeSession']);
+// Route::get('Student', PlanificationCourController::class);
+

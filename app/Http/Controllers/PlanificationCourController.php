@@ -15,11 +15,13 @@ use App\Http\Resources\ModuleProfResource;
 use App\Http\Resources\ProfesseurResource;
 use App\Models\PlanificationCourParClasse;
 use App\Http\Resources\ClasseAnneeResource;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\PlanificationCourRequest;
 use App\Http\Resources\InscriptionResource;
 use App\Http\Resources\PlanificationCourResource;
 use App\Models\Inscription;
+use App\Models\PlanificationSessionCour;
 
 class PlanificationCourController extends Controller
 {
@@ -41,6 +43,7 @@ class PlanificationCourController extends Controller
      */
     public function store(Request $request)
     {
+        // return $this->getStudentSession();
         $cours = PlanificationCour::create([
             "professeur_id" => $request->professeur_id,
             "semestre_id" => $request->semestre_id,
@@ -82,6 +85,22 @@ class PlanificationCourController extends Controller
         }
         $users = InscriptionResource::collection($inscriptions);
         return $this->response(Response::HTTP_ACCEPTED, "Voici les éléves faisant ce cours : ", ['users' => $users]);
+    }
+
+    public function getStudentSession()
+    {
+        $dateNow = Carbon::now();
+        $dateFormat = $dateNow->format('Y-m-d');
+        $allSessions = PlanificationSessionCour::where('date', $dateFormat)->first();        
+        $tab = [];
+        $IdsClasseCours = $allSessions->pluck('cour_classe_id');
+        foreach ($allSessions as $session) {
+            $currentDate = Carbon::parse($session->date . 'T' . $session->heure_debut);
+            if ($currentDate->eq($dateNow)) {
+                $tab[] = $session;
+            }
+        }
+        return $tab;
     }
 
     /**
